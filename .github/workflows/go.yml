@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOTOOLCHAIN: local
-      GOCACHE: ${{ runner.temp }}/go-cache
+      GOCACHE: /tmp/studyConductor-go-cache
     steps:
     - uses: actions/checkout@v4
 
