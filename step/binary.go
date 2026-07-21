@@ -14,6 +14,13 @@ import (
 
 const TERMINAL_CMD = "gnome-terminal"
 
+var execCommand = exec.Command
+var osReadDir = os.ReadDir
+var osReadFile = os.ReadFile
+var osFindProcess = os.FindProcess
+var syscallKill = syscall.Kill
+var procRoot = "/proc"
+
 type BinaryStep struct {
 	*AbstractStep
 	cmd *exec.Cmd
@@ -46,7 +53,7 @@ func getCmd(cfg pkg.ConfigMap) *exec.Cmd {
 		params = append([]string{cmdStr}, params...)
 		cmdStr = "nohup"
 	}
-	result = exec.Command(cmdStr, params...)
+	result = execCommand(cmdStr, params...)
 	if wd, hasWd := cfg["WORKING_DIR"]; hasWd {
 		result.Dir = wd.(string)
 	}
@@ -54,7 +61,7 @@ func getCmd(cfg pkg.ConfigMap) *exec.Cmd {
 }
 
 func (s *BinaryStep) Deactivate(ctx context.Context) error {
-	err := syscall.Kill(s.cmd.Process.Pid, syscall.SIGTERM)
+	err := syscallKill(s.cmd.Process.Pid, syscall.SIGTERM)
 	if err != nil {
 		return err
 	}
@@ -82,7 +89,7 @@ func (s *BinaryStep) Status(ctx context.Context) (*Status, error) {
 		// PID found, soft-attach process
 		if pid > 0 {
 			s.cmd = getCmd(s.config)
-			s.cmd.Process, err = os.FindProcess(pid)
+			s.cmd.Process, err = osFindProcess(pid)
 			if err != nil {
 				return nil, err
 			}
@@ -116,12 +123,12 @@ func (s *BinaryStep) Status(ctx context.Context) (*Status, error) {
 }
 
 func getPid(name string) (int, error) {
-	procList, err := os.ReadDir("/proc")
+	procList, err := osReadDir(procRoot)
 	if err != nil {
 		return 0, err
 	}
 	for _, pid := range procList {
-		procName, _ := os.ReadFile("/proc/" + pid.Name() + "/cmdline")
+		procName, _ := osReadFile(procRoot + "/" + pid.Name() + "/cmdline")
 		if strings.Contains(string(procName), name) {
 			return strconv.Atoi(pid.Name())
 		}

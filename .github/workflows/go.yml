@@ -13,6 +13,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: local
+      GOCACHE: ${{ runner.temp }}/go-cache
     steps:
     - uses: actions/checkout@v4
 
@@ -25,4 +28,9 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v -covermode=atomic -coverprofile=coverage.out ./...
+
+    - name: Coverage gate
+      run: |
+        total=$(go tool cover -func=coverage.out | awk '/total:/ {print substr($3, 1, length($3)-1)}')
+        awk -v total="$total" 'BEGIN { if (total < 80) { printf("coverage %.2f%% is below threshold\n", total); exit 1 } }'

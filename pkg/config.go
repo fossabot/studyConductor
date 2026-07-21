@@ -35,8 +35,8 @@ func (cm *ConfigMap) GetStringSlice(name string) []string {
 	}
 	v := (*cm)[name].([]interface{})
 	res := make([]string, len(v))
-	for _, elem := range v {
-		res = append(res, elem.(string))
+	for i, elem := range v {
+		res[i] = elem.(string)
 	}
 	return res
 }

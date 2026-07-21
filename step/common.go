@@ -2,6 +2,7 @@ package step
 
 import (
 	"context"
+	"fmt"
 	"image/color"
 	"studyConductor/pkg"
 	"sync/atomic"
@@ -62,6 +63,7 @@ func (s *AbstractStep) String() string {
 	case StatePending:
 		state = "Wait..."
 	case StateOff:
+		state = "Start"
 	default:
 		state = "Start"
 	}
@@ -80,7 +82,10 @@ func BuildStep(module *pkg.Module) (Step, error) {
 		aStep.state = StateOff
 		s = &BinaryStep{aStep, nil}
 	case pkg.ModuleTypeDocker:
+		aStep.state = StateOff
 		s = &ContainerStep{aStep, nil, nil}
+	default:
+		return nil, fmt.Errorf("unsupported module type: %s", module.Type)
 	}
 	return s, nil
 }

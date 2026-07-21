@@ -15,6 +15,21 @@ import (
 	"studyConductor/step"
 )
 
+var loadDotenv = godotenv.Load
+var loadConfig = pkg.LoadConfig
+var getStorage = pkg.GetStorage
+
+type teaRunner interface {
+	Run() (tea.Model, error)
+}
+
+var newTeaProgram = func(model tea.Model) teaRunner {
+	return tea.NewProgram(model)
+}
+
+var gestureURL = "http://localhost:8398/override-gestures"
+var gestureRequester = http.DefaultClient.Do
+
 type StudyModel struct {
 	Context         context.Context
 	steps           []step.Step
@@ -35,11 +50,11 @@ func (m *StudyModel) ToggleGesture() error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8398/override-gestures", bytes.NewReader(gestureJson))
+	req, err := http.NewRequest(http.MethodPost, gestureURL, bytes.NewReader(gestureJson))
 	if err != nil {
 		return err
 	}
-	_, err = http.DefaultClient.Do(req)
+	_, err = gestureRequester(req)
 	return err
 }
 
@@ -120,28 +135,34 @@ func initModel(config *pkg.Config) (*StudyModel, error) {
 	return NewStudyModel(config)
 }
 
-func main() {
-	err := godotenv.Load()
+func run() error {
+	err := loadDotenv()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		return fmt.Errorf("error loading .env file: %w", err)
 	}
-	cfg, err := pkg.LoadConfig()
+	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatal("Error loading config")
+		return fmt.Errorf("error loading config: %w", err)
 	}
-	usbDrive, err := pkg.GetStorage(cfg)
+	usbDrive, err := getStorage(cfg)
 	if err != nil {
-		log.Fatal("Error loading USB drive:", err)
+		return fmt.Errorf("error loading USB drive: %w", err)
 	}
 	step.Conf = cfg
 	step.Conf.Study.Storage["path"] = usbDrive
 	mdl, err := initModel(cfg)
 	if err != nil {
-		log.Fatal("Error initializing study model")
+		return fmt.Errorf("error initializing study model: %w", err)
 	}
-	p := tea.NewProgram(mdl)
+	p := newTeaProgram(mdl)
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("tea program run failed: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
 	}
 }

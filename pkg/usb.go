@@ -9,6 +9,11 @@ import (
 )
 
 var Cfg *Config
+var detectDrive = Detect
+var mkdirAll = os.MkdirAll
+var lsblkCombinedOutput = func() ([]byte, error) {
+	return exec.Command("lsblk", "-J", "-o", "NAME,TYPE,MOUNTPOINT,UUID").CombinedOutput()
+}
 
 type BlockDevice struct {
 	Name       string        `json:"name"`
@@ -23,7 +28,7 @@ func GetStorage(config *Config) (string, error) {
 	path := config.Study.Storage.GetString("path")
 	if Cfg.Study.Storage["local"] != "true" {
 		// Use USB Drive
-		drive, err := Detect()
+		drive, err := detectDrive()
 		if err != nil {
 			return "", err
 		}
@@ -38,7 +43,7 @@ func GetStorage(config *Config) (string, error) {
 	}
 	// Check if path already exists; if not: create
 	fmt.Println("Your study data will be stored at: ", path)
-	return path, os.MkdirAll(path, 0777)
+	return path, mkdirAll(path, 0777)
 }
 
 // Detect returns a list of file paths pointing to the root folder of
@@ -46,7 +51,7 @@ func GetStorage(config *Config) (string, error) {
 func Detect() (*BlockDevice, error) {
 	var drives map[string][]BlockDevice
 
-	out, err := exec.Command("lsblk", "-J", "-o", "NAME,TYPE,MOUNTPOINT,UUID").CombinedOutput()
+	out, err := lsblkCombinedOutput()
 	if err != nil {
 		return nil, err
 	}

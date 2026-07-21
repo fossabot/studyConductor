@@ -3,18 +3,19 @@ package step
 import (
 	"context"
 	"fmt"
-	"github.com/containers/common/libnetwork/types"
-	"github.com/containers/podman/v5/pkg/bindings"
-	"github.com/containers/podman/v5/pkg/bindings/containers"
-	"github.com/containers/podman/v5/pkg/bindings/images"
-	"github.com/containers/podman/v5/pkg/domain/entities"
-	"github.com/containers/podman/v5/pkg/specgen"
-	"github.com/opencontainers/runtime-spec/specs-go"
 	"image/color"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
+	"go.podman.io/common/libnetwork/types"
+	"go.podman.io/podman/v6/pkg/bindings"
+	"go.podman.io/podman/v6/pkg/bindings/containers"
+	"go.podman.io/podman/v6/pkg/bindings/images"
+	"go.podman.io/podman/v6/pkg/domain/entities"
+	"go.podman.io/podman/v6/pkg/specgen"
 	"studyConductor/pkg"
 )
 
@@ -28,6 +29,19 @@ type ContainerStep struct {
 	podmanContext   context.Context
 	containerClient *bindings.Connection
 }
+
+var newPodmanConnection = bindings.NewConnection
+var getPodmanClient = bindings.GetClient
+var listImages = images.List
+var pullImage = images.Pull
+var createContainer = pkg.CreateWithSpec
+var startContainer = pkg.Start
+var stopContainer = containers.Stop
+var removeContainer = containers.Remove
+var listContainers = pkg.List
+var createVolume = pkg.CreateVolume
+var mkdirAll = os.MkdirAll
+var getenv = os.Getenv
 
 func boolPtr(b bool) *bool {
 	return &b
@@ -43,7 +57,7 @@ func matchName(haystack []string, needle string) bool {
 }
 
 func (s *ContainerStep) hasLocalImage(imageName string) (bool, error) {
-	report, err := images.List(s.podmanContext, nil)
+	report, err := listImages(s.podmanContext, nil)
 	if err != nil {
 		return false, err
 	}
@@ -67,7 +81,7 @@ func (s *ContainerStep) Activate(ctx context.Context) error {
 		return err
 	}
 	if !isLocal {
-		if _, err = images.Pull(s.podmanContext, imageName, &images.PullOptions{Quiet: boolPtr(true)}); err != nil {
+		if _, err = pullImage(s.podmanContext, imageName, &images.PullOptions{Quiet: boolPtr(true)}); err != nil {
 			return err
 		}
 	}
@@ -108,7 +122,7 @@ func (s *ContainerStep) Activate(ctx context.Context) error {
 	}
 	if oldCont == nil {
 		// Container does not exist yet, so create one it
-		cont, err := pkg.CreateWithSpec(s.podmanContext, sg)
+		cont, err := createContainer(s.podmanContext, sg)
 		if err != nil {
 			fmt.Println(cont, err)
 			return err
@@ -118,15 +132,15 @@ func (s *ContainerStep) Activate(ctx context.Context) error {
 		contId = oldCont.ID
 	}
 
-	return pkg.Start(s.podmanContext, contId)
+	return startContainer(s.podmanContext, contId)
 }
 
 func (s *ContainerStep) createMounts(dataFolder string) ([]*specgen.NamedVolume, error) {
 	path := filepath.Join(Conf.Study.Storage.GetString("path"), "_data")
-	if err := os.MkdirAll(path, 0777); err != nil {
+	if err := mkdirAll(path, 0777); err != nil {
 		return nil, err
 	}
-	volumeName, err := pkg.CreateVolume("study_storage", path)
+	volumeName, err := createVolume("study_storage", path)
 	if err != nil {
 		panic(any(err))
 	}
@@ -174,10 +188,10 @@ func (s *ContainerStep) Deactivate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err = containers.Stop(s.podmanContext, ctr.ID, nil); err != nil {
+	if err = stopContainer(s.podmanContext, ctr.ID, nil); err != nil {
 		return err
 	}
-	_, err = containers.Remove(s.podmanContext, ctr.ID, nil)
+	_, err = removeContainer(s.podmanContext, ctr.ID, nil)
 	return err
 }
 
@@ -220,12 +234,12 @@ func (s *ContainerStep) Status(ctx context.Context) (*Status, error) {
 func (s *ContainerStep) getClient() (*bindings.Connection, error) {
 	var err error
 	if s.containerClient == nil {
-		socket := "unix:" + os.Getenv("XDG_RUNTIME_DIR") + "/podman/podman.sock"
-		s.podmanContext, err = bindings.NewConnection(context.Background(), socket)
+		socket := "unix:" + getenv("XDG_RUNTIME_DIR") + "/podman/podman.sock"
+		s.podmanContext, err = newPodmanConnection(context.Background(), socket)
 		if err != nil {
 			return nil, err
 		}
-		s.containerClient, err = bindings.GetClient(s.podmanContext)
+		s.containerClient, err = getPodmanClient(s.podmanContext)
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +248,7 @@ func (s *ContainerStep) getClient() (*bindings.Connection, error) {
 }
 
 func (s *ContainerStep) getContainer() (*entities.ListContainer, error) {
-	ctrs, err := pkg.List(s.podmanContext, s.config.GetString("CONTAINER_NAME"))
+	ctrs, err := listContainers(s.podmanContext, s.config.GetString("CONTAINER_NAME"))
 	if err != nil && ctrs == nil {
 		return nil, err
 	}

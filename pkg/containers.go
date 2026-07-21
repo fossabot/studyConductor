@@ -3,18 +3,44 @@ package pkg
 import (
 	"context"
 	"encoding/json"
-	"github.com/containers/podman/v5/pkg/bindings"
-	"github.com/containers/podman/v5/pkg/domain/entities"
-	"github.com/containers/podman/v5/pkg/specgen"
+	"io"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"strings"
+
+	"go.podman.io/podman/v6/pkg/bindings"
+	"go.podman.io/podman/v6/pkg/domain/entities"
+	"go.podman.io/podman/v6/pkg/specgen"
 )
+
+type podmanResponse interface {
+	Process(unmarshalInto interface{}) error
+}
+
+type podmanConnection interface {
+	DoRequest(ctx context.Context, httpBody io.Reader, httpMethod, endpoint string, queryParams url.Values, headers http.Header, pathValues ...string) (podmanResponse, error)
+}
+
+type bindingsConnection struct {
+	*bindings.Connection
+}
+
+func (c *bindingsConnection) DoRequest(ctx context.Context, httpBody io.Reader, httpMethod, endpoint string, queryParams url.Values, headers http.Header, pathValues ...string) (podmanResponse, error) {
+	return c.Connection.DoRequest(ctx, httpBody, httpMethod, endpoint, queryParams, headers, pathValues...)
+}
+
+var getPodmanClient = func(ctx context.Context) (podmanConnection, error) {
+	conn, err := bindings.GetClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &bindingsConnection{Connection: conn}, nil
+}
 
 func CreateWithSpec(ctx context.Context, s *specgen.SpecGenerator) (entities.ContainerCreateResponse, error) {
 	var ccr entities.ContainerCreateResponse
-	conn, err := bindings.GetClient(ctx)
+	conn, err := getPodmanClient(ctx)
 	if err != nil {
 		return ccr, err
 	}
@@ -41,7 +67,7 @@ func CreateVolume(name, path string) (string, error) {
 // size information should also be included.  Finally, the sync bool synchronizes the OCI runtime and
 // container state.
 func List(ctx context.Context, name string) ([]entities.ListContainer, error) { // nolint:typecheck
-	conn, err := bindings.GetClient(ctx)
+	conn, err := getPodmanClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +90,7 @@ func List(ctx context.Context, name string) ([]entities.ListContainer, error) { 
 // or a partial/full ID. The optional parameter for detach keys are to override the default
 // detach key sequence.
 func Start(ctx context.Context, nameOrID string) error {
-	conn, err := bindings.GetClient(ctx)
+	conn, err := getPodmanClient(ctx)
 	if err != nil {
 		return err
 	}
