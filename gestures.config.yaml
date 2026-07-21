@@ -13,7 +13,7 @@ modules:
     type: docker
     configuration:
       CONTAINER_NAME: tsdb
-      IMAGE_NAME: timescale/timescaledb:latest-pg16
+      IMAGE_NAME: docker.io/timescale/timescaledb:latest-pg16
       DATA_PATH: /var/lib/postgresql/data
       PORT_MAPPING:
         - "8432:5432"
@@ -25,13 +25,13 @@ modules:
     type: binary
     configuration:
       oneshot: false
-      BINARY_PATH: /home/haimi/Projects/viveSyncBroker/viveSyncBroker
-      WORKING_DIR: /home/haimi/Projects/viveSyncBroker
+      BINARY_PATH: ~/Projects/viveSyncBroker/viveSyncBroker
+      WORKING_DIR: ~/Projects/viveSyncBroker
   # Latin Squirt configuration
   - name: Latin Squirt
     type: binary
     configuration:
-      BINARY_PATH: /home/haimi/Dokumente/Forschung/phd/repos/latin-squirt/out/latin-squirt-linux-x64/latin-squirt
+      BINARY_PATH: ~/Dokumente/Forschung/phd/repos/latin-squirt/out/latin-squirt-linux-x64/latin-squirt
       BINARY_ARGS:
         - '--port: 8357'
         - '--pairs: 2'
@@ -41,7 +41,7 @@ modules:
     configuration:
       oneshot: false
       BINARY_PATH: /usr/local/bin/node
-      WORKING_DIR: /home/haimi/Dokumente/Forschung/phd/repos/local-tlx
+      WORKING_DIR: ~/Dokumente/Forschung/phd/repos/local-tlx
       BINARY_ARGS:
         - 'index.js'
   # Connect to Pico via adb
@@ -52,8 +52,8 @@ modules:
     configuration:
       oneshot: true
       terminal: true
-      BINARY_PATH: /home/haimi/Projects/studyConductor/scripts/connect.sh
-      WORKING_DIR: /home/haimi/Dokumente/Forschung/phd/Studien/2023-gestures
+      BINARY_PATH: ~/Projects/studyConductor/scripts/connect.sh
+      WORKING_DIR: ~/Dokumente/Forschung/phd/Studien/2023-gestures
   # Connect to Pico via adb
   - name: Start App on Pico
     type: binary
@@ -61,8 +61,8 @@ modules:
       - Persisting Broker
     configuration:
       oneshot: true
-      BINARY_PATH: /home/haimi/Projects/studyConductor/scripts/start_study.sh
-      WORKING_DIR: /home/haimi/Dokumente/Forschung/phd/Studien/2023-gestures
+      BINARY_PATH: ~/Projects/studyConductor/scripts/start_study.sh
+      WORKING_DIR: ~/Dokumente/Forschung/phd/Studien/2023-gestures
       BINARY_ARGS:
         - 'start'
         - 'com.thi.hcig.GesturesStudy'
@@ -73,8 +73,8 @@ modules:
       - Persisting Broker
     configuration:
       oneshot: true
-      BINARY_PATH: /home/haimi/Projects/studyConductor/scripts/screenrecord.sh
-      WORKING_DIR: /home/haimi/Dokumente/Forschung/phd/Studien/2023-gestures
+      BINARY_PATH: ~/Projects/studyConductor/scripts/screenrecord.sh
+      WORKING_DIR: ~/Dokumente/Forschung/phd/Studien/2023-gestures
       BINARY_ARGS:
         - 'start'
   # Stop screen recording
@@ -84,8 +84,8 @@ modules:
       - Persisting Broker
     configuration:
       oneshot: true
-      BINARY_PATH: /home/haimi/Projects/studyConductor/scripts/screenrecord.sh
-      WORKING_DIR: /home/haimi/Dokumente/Forschung/phd/Studien/2023-gestures
+      BINARY_PATH: ~/Projects/studyConductor/scripts/screenrecord.sh
+      WORKING_DIR: ~/Dokumente/Forschung/phd/Studien/2023-gestures
       BINARY_ARGS:
         - 'stop'
   # Start adb keepawake
@@ -96,6 +96,6 @@ modules:
     configuration:
       nohup: true
       oneshot: false
-      BINARY_PATH: /home/haimi/Projects/studyConductor/scripts/keepawake.sh
-      WORKING_DIR: /home/haimi/Dokumente/Forschung/phd/Studien/2023-gestures
+      BINARY_PATH: ~/Projects/studyConductor/scripts/keepawake.sh
+      WORKING_DIR: ~/Dokumente/Forschung/phd/Studien/2023-gestures
 
