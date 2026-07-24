@@ -1,4 +1,6 @@
 # Study Conduction helper
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FdaHaimi%2FstudyConductor.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FdaHaimi%2FstudyConductor?ref=badge_shield)
+
 
 Studies often require
 * Preparation steps
@@ -40,3 +42,7 @@ On __debian__ based distributions, install following packages:
 ```shell
 sudo apt install libbtrfs-dev libgpgme-dev libdevmapper-dev
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FdaHaimi%2FstudyConductor.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FdaHaimi%2FstudyConductor?ref=badge_large)
